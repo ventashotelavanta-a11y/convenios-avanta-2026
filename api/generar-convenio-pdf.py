@@ -110,11 +110,11 @@ def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigen
     
     # ========== TEXTO INTRODUCTORIO (sin "su" antes de empresa) ==========
     c.setFont('Helvetica', 12)
-    texto_intro_1 = f"A continuación, encontrará las tarifas especiales para {cliente.get('empresa', 'Empresa')}"
+    texto_intro_1 = f"Por parte de Avanta Hotel & Villas, encontrará las tarifas especiales para {cliente.get('empresa', 'Empresa')}"
     c.drawString(60, y, texto_intro_1)
     y -= 15
     
-    texto_intro_2 = "        por parte de Avanta Hotel & Villas"
+    texto_intro_2 = ""
     c.drawString(60, y, texto_intro_2)
     y -= 30
     
