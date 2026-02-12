@@ -177,9 +177,9 @@ def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigen
     y -= 23
     
     c.setFont('Helvetica', 12)
-    c.drawString(80, y, 'Wi-Fi de alta velocidad Gratis')
+    c.drawString(80, y, 'Wi-Fi de alta velocidad gratuito')
     y -= 15
-    c.drawString(80, y, 'Sala de reuniones y espacio de trabajo para hasta 12 personas.')
+    c.drawString(80, y, 'Sala de reuniones y espacio de trabajo hasta 12 personas')
     y -= 15
     c.drawString(80, y, 'Estacionamiento gratuito')
     y -= 26
@@ -193,7 +193,7 @@ def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigen
     c.setFont('Helvetica-Bold', 12)
     c.drawString(80, y, 'La tarifa convenio está disponible únicamente para reservaciones realizadas')
     y -= 15
-    c.drawString(80, y, 'directamente con el hotel. a través de nuestro motor de reservaciones con el')
+    c.drawString(80, y, 'directamente con el hotel, a través de nuestro motor de reservaciones con el')
     y -= 15
     # código de Promocional: AVANTA
     c.drawString(80, y, 'código de Promocional: AVANTA')
@@ -201,7 +201,7 @@ def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigen
     
     # Año SIN paréntesis
     c.setFont('Helvetica', 12)
-    c.drawString(80, y, f'Tarifa vigente al 31 de diciembre de {año_vigencia} a partir de ahí el presente convenio')
+    c.drawString(80, y, f'Tarifa vigente hasta el 31 de diciembre de {año_vigencia}. A partir de esa fecha, el presente convenio')
     y -= 15
     
     # Continuar con parte normal y parte en negrita
@@ -214,11 +214,9 @@ def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigen
     x_pos += c.stringWidth('(no tiene vencimiento) ', 'Helvetica-Bold', 12)
     
     c.setFont('Helvetica', 12)
-    c.drawString(x_pos, y, 'con las respectivas actualizaciones')
+    c.drawString(x_pos, y, 'con las respectivas actualizaciones de tarifa y documento')
     y -= 15
-    
-    c.drawString(80, y, 'de tarifa y documento')
-    y -= 15
+
     
     c.drawString(80, y, 'Todas las reservaciones están sujetas a disponibilidad.')
     y -= 30
