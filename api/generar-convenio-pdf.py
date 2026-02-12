@@ -21,16 +21,39 @@ from io import BytesIO
 def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigencia=None):
     """
     Crea el PDF del convenio siguiendo exactamente la plantilla 2026
-    Ahora acepta tarifas dinámicas
+    Las tarifas se leen desde tarifas.json si no se proporcionan
     """
-    # Tarifas por defecto si no se proporcionan
+    # Cargar tarifas desde JSON si no se proporcionan
     if tarifas is None:
-        tarifas = {
-            'kingSin': 800,
-            'queenSin': 1000,
-            'kingCon': 1040,
-            'queenCon': 1480
-        }
+        try:
+            tarifas_path = os.path.join(os.path.dirname(__file__), 'tarifas.json')
+            with open(tarifas_path, 'r', encoding='utf-8') as f:
+                tarifas_data = json.load(f)
+            
+            # Mapear nombres del JSON a los nombres usados en el código
+            tarifas = {
+                'kingSin': tarifas_data['tarifas']['habitacionKingSinDesayuno'],
+                'queenSin': tarifas_data['tarifas']['habitacionQueenSinDesayuno'],
+                'kingCon': tarifas_data['tarifas']['habitacionKingConDesayuno'],
+                'queenCon': tarifas_data['tarifas']['habitacionQueenConDesayuno']
+            }
+            
+            # Usar el año de vigencia del JSON si no se proporciona
+            if año_vigencia is None:
+                año_vigencia = tarifas_data['version']
+                
+            print(f"Tarifas cargadas desde JSON: {tarifas}")
+            print(f"Año de vigencia: {año_vigencia}")
+            
+        except Exception as e:
+            # Si falla, usar valores por defecto
+            print(f"Advertencia: No se pudo cargar tarifas.json, usando valores por defecto: {e}")
+            tarifas = {
+                'kingSin': 800,
+                'queenSin': 1000,
+                'kingCon': 1040,
+                'queenCon': 1480
+            }
     
     # Año de vigencia por defecto
     if año_vigencia is None:
