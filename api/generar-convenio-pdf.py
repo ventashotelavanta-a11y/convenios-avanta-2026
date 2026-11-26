@@ -54,7 +54,16 @@ def fmt_tarifa(val):
     return s.replace(',', '_').replace('.', ',').replace('_', '.')
 
 
-def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigencia=None):
+# Plantilla 2027: los convenios con fecha igual o posterior usan tarifas-2027.json
+INICIO_PLANTILLA_2027 = '2027-02-01'
+
+
+def anio_plantilla(fecha):
+    # ponytail: año de la plantilla según la fecha del convenio (2027 desde INICIO_PLANTILLA_2027)
+    return '2027' if fecha >= INICIO_PLANTILLA_2027 else '2026'
+
+
+def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigencia=None, tipo='hotel'):
     """
     Genera el PDF del convenio Avanta 2026.
     - Tipografia Kodchasan
@@ -69,18 +78,24 @@ def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigen
     dir_api = os.path.dirname(os.path.abspath(__file__))
     fuente  = registrar_fuente(dir_api)
 
+    desde_txt = None  # texto de inicio de vigencia (solo plantilla 2027)
+    villas = (tipo == 'villas')  # versión Villas: usa tarifasVillas y etiqueta 'Villa'
+    etq = 'Villa' if villas else 'Habitación'
     # ── TARIFAS ──────────────────────────────────────────────────
     if tarifas is None:
         try:
-            with open(os.path.join(dir_api, 'tarifas.json'), 'r', encoding='utf-8') as f:
+            archivo = 'tarifas-2027.json' if fecha >= INICIO_PLANTILLA_2027 else 'tarifas.json'
+            with open(os.path.join(dir_api, archivo), 'r', encoding='utf-8') as f:
                 td = json.load(f)
+            desde_txt = td.get('vigenciaDesdeTexto')
+            base = td['tarifasVillas'] if villas else td['tarifas']
             tarifas = {
-                'kingSin':        td['tarifas']['habitacionKingSinDesayuno'],
-                'queenSin':       td['tarifas']['habitacionQueenSinDesayuno'],
-                'kingAmericano':  td['tarifas']['habitacionKingDesayunoAmericano'],
-                'queenAmericano': td['tarifas']['habitacionQueenDesayunoAmericano'],
-                'kingBuffet':     td['tarifas']['habitacionKingDesayunoBuffet'],
-                'queenBuffet':    td['tarifas']['habitacionQueenDesayunoBuffet'],
+                'kingSin':        base['habitacionKingSinDesayuno'],
+                'queenSin':       base['habitacionQueenSinDesayuno'],
+                'kingAmericano':  base['habitacionKingDesayunoAmericano'],
+                'queenAmericano': base['habitacionQueenDesayunoAmericano'],
+                'kingBuffet':     base['habitacionKingDesayunoBuffet'],
+                'queenBuffet':    base['habitacionQueenDesayunoBuffet'],
             }
             if año_vigencia is None:
                 año_vigencia = td['version']
@@ -171,13 +186,20 @@ def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigen
     c.setFillColor(negro)
     c.drawString(LEFT, y, nombre_completo)
     y -= 18
-    c.drawString(LEFT, y, f"Convenio Avanta con {empresa}")
+    if villas:
+        titulo = f"Convenio Villas {anio_plantilla(fecha)} con {empresa}"
+    elif anio_plantilla(fecha) == '2027':  # plantilla 2027: los dos convenios se nombran Hotel / Villas
+        titulo = f"Convenio Hotel 2027 con {empresa}"
+    else:
+        titulo = f"Convenio Avanta con {empresa}"
+    c.drawString(LEFT, y, titulo)
     y -= 22
     c.drawString(LEFT, y, 'Por parte de Avanta Hotel & Villas.')
     y -= 15
     # Wrap dinámico: evita desbordamiento con nombres de empresa largos
     draw_wrapped(
-        f"Encontrará nuestros planes de hospedaje flexibles especiales para {empresa}",
+        (f"Encontrará nuestros planes de hospedaje en Villas, flexibles y especiales para {empresa}" if villas
+         else f"Encontrará nuestros planes de hospedaje flexibles especiales para {empresa}"),
         LEFT, size=12, line_h=15
     )
     y -= 13
@@ -214,9 +236,9 @@ def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigen
             y -= 14
             c.setFillColor(negro)
 
-        fila('Habitación Sencilla King:', king_val)
+        fila(f'{etq} Sencilla King:', king_val)
         sub(king_pers)
-        fila('Habitación Doble Queen:', queen_val)
+        fila(f'{etq} Doble Queen:', queen_val)
         sub(queen_pers)
         y -= 6
 
@@ -258,13 +280,24 @@ def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigen
     c.drawString(LEFT, y, 'Especificaciones de tarifas convenio:')
     y -= 18
 
+    if desde_txt:  # plantilla 2027: vigencia con fecha de inicio
+        lineas_vigencia = [
+            f"Tarifa vigente del {desde_txt} al 31 de diciembre de {año_vigencia}.",
+            "A partir de esa fecha el presente convenio continuará (no tiene vencimiento)",
+            "con las respectivas actualizaciones de tarifa y documento",
+        ]
+    else:
+        lineas_vigencia = [
+            f"Tarifa vigente hasta el 31 de diciembre de {año_vigencia}. A partir de esa fecha el presente",
+            "convenio continuará (no tiene vencimiento) con las respectivas actualizaciones",
+            "de tarifa y documento",
+        ]
+
     for linea in [
         "La tarifa convenio está disponible únicamente para reservaciones realizadas",
         "directamente con el hotel, a través de nuestro motor de reservaciones con",
         "el código Promocional: AVANTA",
-        (f"Tarifa vigente hasta el 31 de diciembre de {año_vigencia}. A partir de esa fecha el presente"),
-        "convenio continuará (no tiene vencimiento) con las respectivas actualizaciones",
-        "de tarifa y documento",
+        *lineas_vigencia,
         "Todas las reservaciones están sujetas a disponibilidad.",
     ]:
         c.drawString(LEFT, y, linea)
@@ -333,16 +366,22 @@ class handler(BaseHTTPRequestHandler):
             fecha           = data.get('fecha')
             tarifas         = data.get('tarifas')
             año_vigencia    = data.get('añoVigencia')
+            tipo            = data.get('tipoHabitacion', 'hotel')  # 'hotel' | 'villas'
 
             if not numero_convenio or not cliente or not fecha:
                 raise ValueError("Faltan datos requeridos")
 
             pdf_bytes  = crear_convenio_pdf(numero_convenio, cliente, fecha,
-                                            tarifas=tarifas, año_vigencia=año_vigencia)
+                                            tarifas=tarifas, año_vigencia=año_vigencia, tipo=tipo)
             pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
 
             empresa_nombre = cliente.get('empresa', 'empresa')
-            file_name = f"Convenio_({empresa_nombre}).pdf"
+            if tipo == 'villas':
+                file_name = f"Convenio Villas {anio_plantilla(fecha)} ({empresa_nombre}).pdf"
+            elif anio_plantilla(fecha) == '2027':
+                file_name = f"Convenio Hotel 2027 ({empresa_nombre}).pdf"
+            else:
+                file_name = f"Convenio_({empresa_nombre}).pdf"
 
             resp = {
                 'success':        True,

@@ -17,5 +17,13 @@
   "instrucciones": {
     "comoActualizar": "Edita los 6 números en 'tarifas' y cambia 'version' al nuevo año",
     "ejemplo": "Para 2027, cambia version a '2027' y actualiza las tarifas con los nuevos montos"
+  },
+  "tarifasVillas": {
+    "habitacionKingSinDesayuno": 700,
+    "habitacionQueenSinDesayuno": 900,
+    "habitacionKingDesayunoAmericano": 865,
+    "habitacionQueenDesayunoAmericano": 1230,
+    "habitacionKingDesayunoBuffet": 940,
+    "habitacionQueenDesayunoBuffet": 1380
   }
 }

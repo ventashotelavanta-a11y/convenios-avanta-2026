@@ -1,0 +1,26 @@
+{
+  "version": "2027",
+  "fechaActualizacion": "2026-11-26",
+  "vigenciaDesde": "2027-02-01",
+  "vigenciaHasta": "2027-12-31",
+  "vigenciaDesdeTexto": "1 de febrero de 2027",
+  "tarifas": {
+    "habitacionKingSinDesayuno": 830,
+    "habitacionQueenSinDesayuno": 1030,
+    "habitacionKingDesayunoAmericano": 1015,
+    "habitacionQueenDesayunoAmericano": 1380,
+    "habitacionKingDesayunoBuffet": 1100,
+    "habitacionQueenDesayunoBuffet": 1540
+  },
+  "moneda": "MXN",
+  "codigoPromo": "AVANTA",
+  "notas": "Tarifas corporativas de convenio 2027 (Propuesta Tarifas 2027, oficio AV-TAR-2027-001). El generador las usa para convenios con fecha igual o posterior a vigenciaDesde; antes de esa fecha sigue usando tarifas.json (2026).",
+  "tarifasVillas": {
+    "habitacionKingSinDesayuno": 730,
+    "habitacionQueenSinDesayuno": 930,
+    "habitacionKingDesayunoAmericano": 915,
+    "habitacionQueenDesayunoAmericano": 1280,
+    "habitacionKingDesayunoBuffet": 1000,
+    "habitacionQueenDesayunoBuffet": 1440
+  }
+}
