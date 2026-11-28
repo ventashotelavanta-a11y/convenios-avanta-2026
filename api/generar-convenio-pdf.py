@@ -54,13 +54,29 @@ def fmt_tarifa(val):
     return s.replace(',', '_').replace('.', ',').replace('_', '.')
 
 
-# Plantilla 2027: los convenios con fecha igual o posterior usan tarifas-2027.json
+# Calendario 2027: desde INICIO_ANIO_2027 los documentos se llaman "2027" (enero 2027 conserva las tarifas 2026);
+# desde INICIO_PLANTILLA_2027 aplican las tarifas nuevas (tarifas-2027.json).
+INICIO_ANIO_2027 = '2027-01-01'
 INICIO_PLANTILLA_2027 = '2027-02-01'
 
 
 def anio_plantilla(fecha):
     # ponytail: año de la plantilla según la fecha del convenio (2027 desde INICIO_PLANTILLA_2027)
-    return '2027' if fecha >= INICIO_PLANTILLA_2027 else '2026'
+    return '2027' if fecha >= INICIO_ANIO_2027 else '2026'
+
+
+def tarifas_para(fecha, tipo='hotel'):
+    # Tarifas que se aplican a un convenio con esa fecha (para registrarlas en las hojas de n8n)
+    dir_api = os.path.dirname(os.path.abspath(__file__))
+    archivo = 'tarifas-2027.json' if fecha >= INICIO_PLANTILLA_2027 else 'tarifas.json'
+    with open(os.path.join(dir_api, archivo), 'r', encoding='utf-8') as f:
+        td = json.load(f)
+    b = td['tarifasVillas'] if tipo == 'villas' else td['tarifas']
+    return {
+        'kingSin': b['habitacionKingSinDesayuno'], 'queenSin': b['habitacionQueenSinDesayuno'],
+        'kingAmericano': b['habitacionKingDesayunoAmericano'], 'queenAmericano': b['habitacionQueenDesayunoAmericano'],
+        'kingBuffet': b['habitacionKingDesayunoBuffet'], 'queenBuffet': b['habitacionQueenDesayunoBuffet'],
+    }
 
 
 def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigencia=None, tipo='hotel'):
@@ -286,6 +302,12 @@ def crear_convenio_pdf(numero_convenio, cliente, fecha, tarifas=None, año_vigen
             "A partir de esa fecha el presente convenio continuará (no tiene vencimiento)",
             "con las respectivas actualizaciones de tarifa y documento",
         ]
+    elif anio_plantilla(fecha) == '2027':  # enero 2027: documento 2027 con tarifas 2026
+        lineas_vigencia = [
+            "Tarifa vigente hasta el 31 de enero de 2027. A partir de esa fecha el presente",
+            "convenio continuará (no tiene vencimiento) con las respectivas actualizaciones",
+            "de tarifa y documento",
+        ]
     else:
         lineas_vigencia = [
             f"Tarifa vigente hasta el 31 de diciembre de {año_vigencia}. A partir de esa fecha el presente",
@@ -383,7 +405,14 @@ class handler(BaseHTTPRequestHandler):
             else:
                 file_name = f"Convenio_({empresa_nombre}).pdf"
 
+            try:
+                tarifas_aplicadas = tarifas_para(fecha, tipo)
+            except Exception:
+                tarifas_aplicadas = None
             resp = {
+                'anioPlantilla':  anio_plantilla(fecha),
+                'tipoConvenio':   tipo,
+                'tarifasAplicadas': tarifas_aplicadas,
                 'success':        True,
                 'message':        'Convenio generado exitosamente - Plantilla 2026',
                 'numeroConvenio': numero_convenio,
